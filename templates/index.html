@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Classification</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+    <p><b> Model Accuracy: {{ accuracy }} </b></p>
+
+    <form action="http://localhost:5000/predict" method="post">
+        <p><b> Text Document </b></p>
+
+        <p><input type="text" name="text" value="{{ text }}" /></p>
+
+        <p><input type="submit" value="Predict" /></p>
+
+    </form>
+
+    {% if cat_pred %}
+    <p><b> Prediction Result: {{ cat_pred }} {{ confidence }} </b></p>
+    <p><b> Top 10 important words {{ important_words }} </b></p>
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addWordModal">
+        Add a word
+    </button>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#removeWordModal">
+        Remove a word
+    </button>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#adjustImportanceModal">
+        Adjust word importance
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addWordModal" tabindex="-1" role="dialog" aria-labelledby="addWordModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWordModalLabel">Add a word</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="http://localhost:5000/add" method="post">
+                        <div class="form-group">
+                            <label for="word">New word</label>
+                            <input type="text" class="form-control" placeholder="New word" id="word"
+                                aria-label="New word" name="word" aria-describedby="basic-addon2">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select class="form-control" id="category" name="category">
+                                {% for key, value in categories.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="removeWordModal" tabindex="-1" role="dialog" aria-labelledby="removeWordModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeWordModalLabel">Remove a word</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="http://localhost:5000/remove" method="post">
+                        <div class="form-group">
+                            <label for="word">Remove word</label>
+                            <input type="text" class="form-control" placeholder="Input a word" id="word"
+                                aria-label="Remove word" name="word" aria-describedby="basic-addon2">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select class="form-control" id="category" name="category">
+                                {% for key, value in categories.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="adjustImportanceModal" tabindex="-1" role="dialog"
+        aria-labelledby="adjustImportanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adjustImportanceModalLabel">Adjust word importance</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="http://localhost:5000/adjust-importance" method="post">
+                        <div class="form-group">
+                            <label for="word">Input word</label>
+                            <input type="text" class="form-control" placeholder="Input a word" id="word"
+                                aria-label="inputWord" name="word" aria-describedby="basic-addon2">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select class="form-control" id="category" name="category">
+                                {% for key, value in categories.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="importance">Importance</label>
+                            <input type="number" class="form-control" placeholder="Input the importance" id="importance"
+                                aria-label="inputImportance" name="importance" aria-describedby="basic-addon2">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
