@@ -5,7 +5,6 @@ import time
 import re
 import numpy as np
 import pandas as pd
-from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import nltk
@@ -15,6 +14,9 @@ nltk.download('omw-1.4')
 class MNB:
 
     def __init__(self) -> None:
+        self.init_data()
+
+    def init_data(self):
         self.cat_num_docs = {}  # {category: num of documents}
 
         # {category: -log(num of doc / total num of doc)}
@@ -42,24 +44,27 @@ class MNB:
         data.sample(frac=1)
         fragment_size = ceil(len(data) / 10)
         test_accuracy = []
-        print(fragment_size)
         for i in range(10):
-            test_data = data.iloc[i *
-                                  fragment_size: min(len(data), (i + 1) * fragment_size)]
-            train_data = data.drop(test_data.index)
-            self.train(train_data)
-            test_accuracy.append(self.predict_test(test_data)['accuracy'])
-        print("Mean accuracy =", np.array(test_accuracy).mean())
+            print("Training {}/10...".format(i + 1))
+            self.init_data()
+            self.test_data = data.iloc[i *
+                                       fragment_size: min(len(data), (i + 1) * fragment_size)]
+            self.train_data = data.drop(self.test_data.index)
+            self.train()
+            test_accuracy.append(self.predict_test()['accuracy'])
+        mean_accuracy = np.array(test_accuracy).mean()
+        print("Mean accuracy =", mean_accuracy)
+        return {'accuracy': mean_accuracy}
 
-    def train(self, train_data):
+    def train(self):
         print('Begin training classifier...')
         start_time = time.time()
 
-        len_train_data = len(train_data)
+        len_train_data = len(self.train_data)
 
         for i in range(8):
             self.cat_num_docs[i] = 0
-        for label in train_data['label']:
+        for label in self.train_data['label']:
             self.cat_num_docs[label] += 1
         for label in self.cat_num_docs:
             self.cat_neg_log_prob[label] = - \
@@ -67,7 +72,7 @@ class MNB:
 
         word_set = set()
 
-        for i, row in train_data.iterrows():
+        for i, row in self.train_data.iterrows():
             text = re.split('\W+', (' '.join([row['title'], row['content']])))
             list_words = self.get_list_words(text)
             cat = row['label']
@@ -85,12 +90,12 @@ class MNB:
         print("The Classifier is trained and it took {0:.2f} seconds".format(
             time.time() - start_time))
 
-    def predict_test(self, test_data):
+    def predict_test(self):
         print('Begin testing classifier...')
         li_results = []
         start_time = time.time()
 
-        for i, row in test_data.iterrows():
+        for i, row in self.test_data.iterrows():
             [cat_pred_log_prob_dict, _] = self.compute_prob(
                 (' '.join([row['title'], row['content']])))
             cat_pred = max(cat_pred_log_prob_dict,
@@ -124,15 +129,19 @@ class MNB:
         udf_important_words_dict = {
             w: self.cat_word_importance_dict[cat_pred][w] for w in udf_important_words}
         important_words = {**top_10_words, **udf_important_words_dict}
+        important_words_list = []
+        for word in important_words:
+            important_words_list.append(
+                {'word': word, 'importance': important_words[word]})
 
         print('cat pred: ', cat_pred)
         print('confidence: ', confidence)
-        print('important_words: ', important_words)
+        print('important_words: ', important_words_list)
 
         return {
             'cat_pred': cat_pred,
             'confidence': confidence,
-            'important_words': important_words
+            'important_words': important_words_list
         }
 
     def compute_prob(self, text):
@@ -220,12 +229,7 @@ def softmax(x):
 
 
 def main():
-    df = pd.read_csv('dbpedia_8K.csv')
-
-    random_state = 25
-    train_data = df.sample(frac=0.8, random_state=random_state)
-    test_data = df.drop(train_data.index)
-
+    df = pd.read_csv('dataset/dbpedia_8K.csv')
     model = MNB()
 
     # model.train(train_data)
