@@ -30,7 +30,7 @@ The mean accuracy on ```dbpedia_8K.csv``` dataset is 0.8547499999999999, which i
 
 On the web application, the users can input custom text to predict its category. The important words that contribute most to the prediction will be displayed in the barchart. The y axis value is the exactly raw importance value P(w|c).
 
-$$P(w|c) = \frac{\alpha_{wc} + F_{wc}}{\sum^N_{x=1}\alpha_{xc} + \sum^N_{x=1}F_{xc}}$$
+$$P(w|c) = \frac{\alpha_{wc} + F_{wc}}{\sum^{N}_{x=1}\alpha_{xc} + \sum^{N}_{x=1}F_{xc}}$$
 
  They can manually add a word to this chart. Once a word is added, its importance will be calculated and display.
 
